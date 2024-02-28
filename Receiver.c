@@ -64,8 +64,8 @@ void receiveExitSignal(int senderSocket)
     if (exitSignal == -1)
     {
         printf("Received exit signal from server.\nClosing connection.\n");
-        printf("Average time: %f milliseconds\n", totalTime/runNumber);
-        printf("Average bandwidth: %f bytes/millisecond\n", totalBandwidth/runNumber);
+        printf("Average time: %.2f milliseconds\n", totalTime/runNumber);
+        printf("Average bandwidth: %.2f bytes/millisecond\n", totalBandwidth/runNumber);
         // Handle the exit signal as needed
         close(senderSocket);
         exit(EXIT_SUCCESS);
@@ -98,7 +98,7 @@ void receiveTheFile(int runNumber)
     elapsedTime += (end.tv_usec - start.tv_usec) / 1000.0; // Convert microseconds to milliseconds
 
     // Update total bandwidth
-    totalBandwidth += (fileSize / elapsedTime) * 1000.0; // Calculate bandwidth in bytes/ms
+    totalBandwidth += (fileSize / elapsedTime); // Calculate bandwidth in bytes/ms
     // Print time and bandwidth
     printf("runNumber: %d \n", runNumber);
     printf("Received file in %.2f milliseconds.\n", elapsedTime); // Print elapsed time
