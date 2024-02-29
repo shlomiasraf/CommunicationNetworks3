@@ -11,8 +11,6 @@
 #include <signal.h>
 #include <unistd.h>
 
-#define PORT 8080
-#define SERVER_IP "127.0.0.1"
 
 char* fileName = "file.txt";
 char* CC_cubic = "cubic";
@@ -25,7 +23,7 @@ void readTheFile()
 {
     printf("Server startup\n");
 
-    printf("Reading file content...\n");
+    printf("Reading file c...\n");
     FILE *fpointer = fopen(fileName, "r"); // Open the file for reading
 
     if (fpointer == NULL)
@@ -45,23 +43,30 @@ void readTheFile()
         fclose(fpointer);  // Close the file
         exit(EXIT_FAILURE); // Exit the program with failure status
     }
+    memset(fileContent, 0, fileSize);
     fread(fileContent, sizeof(char), fileSize, fpointer); // Read the file content into memory
     fclose(fpointer); // Close the file
 }
 
-void createTheSocket()
+void createTheSocket(int port,char* algo,char* ip_address)
 {
     // create socket
     printf("Setting up the socket...\n");
     struct sockaddr_in serverAddr;
-
+    memset(&serverAddr, 0, sizeof(serverAddr));
     // Create socket for the sender
     senderSocket = socket(AF_INET, SOCK_STREAM, 0);
     // Set congestion control algorithm to Reno
+    //algorithm settings
+    if (setsockopt(senderSocket, IPPROTO_TCP, TCP_CONGESTION,algo,strlen(algo)))
+    {
+        perror("failed to set congestion control algorithm");
+        return;
+    }
 
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = inet_addr(SERVER_IP);
-    serverAddr.sin_port = htons(PORT);
+    serverAddr.sin_addr.s_addr = inet_addr(ip_address);
+    serverAddr.sin_port = htons(port);
 
     // Connect to the receiver
     int bond = connect(senderSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
@@ -102,10 +107,13 @@ void closeConnection()
     close(senderSocket);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    int port = atoi (argv[4]);
+    char* algo = argv[6];
+    char* ip_address = argv[2];
     readTheFile();
-    createTheSocket();
+    createTheSocket(port,algo,ip_address);
     sendTheFile();
     printf("do you want to send the file again?\n");
     char word[4];

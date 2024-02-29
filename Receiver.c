@@ -8,8 +8,8 @@
 #include <arpa/inet.h>
 #include <bits/time.h>
 #include <time.h>
+#include <netinet/tcp.h>
 
-#define PORT 8080
 #define SERVER_IP "127.0.0.1"
 int runNumber = 1;
 int receiverSocket, senderSocket; // Variables for receiver and sender sockets
@@ -21,7 +21,7 @@ double elapsedTime; // Variable to store elapsed time
 double totalBandwidth = 0.0; // Variable to store total bandwidth
 int fileCount = 0; // Variable to count the number of files received
 double totalTime = 0; // the total time from when the files were sent until they arrived
-int createTheSocket()
+int createTheSocket(int port, char* algo)
 {
     // Create socket for the receiver
     receiverSocket = socket(AF_INET, SOCK_STREAM, 0); // Create a TCP socket
@@ -29,11 +29,16 @@ int createTheSocket()
         perror("socket"); // Print error message
         exit(EXIT_FAILURE); // Exit program with failure status
     }
-
+    //algorithm settings
+    if (setsockopt(receiverSocket, IPPROTO_TCP, TCP_CONGESTION,algo,strlen(algo)))
+    {
+        perror("failed to set congestion control algorithm");
+        return -1;
+    }
     // Setup server address
     serverAddr.sin_family = AF_INET; // Set address family to IPv4
-    serverAddr.sin_addr.s_addr = inet_addr(SERVER_IP); // Set IP address to localhost
-    serverAddr.sin_port = htons(PORT); // Set port number
+    serverAddr.sin_addr.s_addr = INADDR_ANY; // Set IP address to localhost
+    serverAddr.sin_port = htons(port); // Set port number
 
     // Bind socket to port
     if (bind(receiverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) == -1) { // Bind socket to port
@@ -80,6 +85,7 @@ void receiveTheFile(int runNumber)
         perror("rec"); // Print error message
         exit(EXIT_FAILURE); // Exit program with failure status
     }
+    memset(buffer, 0, sizeof(buffer));
     // Receive file content
     clock_gettime(CLOCK_MONOTONIC, &start); // Get start time
     received = recv(senderSocket, buffer, fileSize, 0); // Receive file content
@@ -110,9 +116,11 @@ void receiveTheFile(int runNumber)
     printf("Waiting for sender response...\n"); // Wait message
     receiveExitSignal(senderSocket);
 }
-int main()
+int main(int argc, char *argv[])
 {
-    createTheSocket();
+    int port = atoi (argv[2]);
+    char* algo = argv[4];
+    createTheSocket(port,algo);
     while(1)
     {
         receiveTheFile(runNumber);
