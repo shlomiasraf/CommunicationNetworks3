@@ -94,12 +94,13 @@ void receiveTheFile(int runNumber)
     // Receive file size
     if (received == -1)
     { // Check for receive error
-        perror("rec"); // Print error message
+        perror("recv"); // Print error message
         exit(EXIT_FAILURE); // Exit program with failure status
     }
     memset(buffer, 0, sizeof(buffer));
     // Receive file content
-    clock_gettime(CLOCK_MONOTONIC, &start); // Get start time
+    struct timeval start, end;
+    gettimeofday(&start, NULL); // Get start time
     received = recv(senderSocket, buffer, fileSize, 0); // Receive file content
     if (received == -1)
     { // Check for receive error
@@ -110,10 +111,10 @@ void receiveTheFile(int runNumber)
     { // Check if sender closed connection
         return; // Exit loop
     }
-    clock_gettime(CLOCK_MONOTONIC, &end); // Get end time
-    // Calculate elapsed time// Calculate elapsed time in milliseconds
-    double elapsedTime = (end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_usec - start.tv_usec) / 1000.0;
-    double currentBandwidth = (received / elapsedTime);
+    gettimeofday(&end, NULL); // Get end time
+    // Calculate elapsed time
+    double elapsedTime = ((end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_usec - start.tv_usec) / 1000.0);
+    double currentBandwidth = (fileSize / (elapsedTime));
     // Update total bandwidth
     totalBandwidth += currentBandwidth; // Calculate bandwidth in bytes/ms
     totalTime += elapsedTime;
