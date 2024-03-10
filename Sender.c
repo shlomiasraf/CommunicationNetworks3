@@ -23,7 +23,7 @@ void readTheFile()
 {
     printf("Server startup\n");
 
-    printf("Reading file c...\n");
+    printf("Reading file...\n");
     FILE *fpointer = fopen(fileName, "r"); // Open the file for reading
 
     if (fpointer == NULL)
