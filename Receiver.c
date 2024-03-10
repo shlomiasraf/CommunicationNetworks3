@@ -17,10 +17,10 @@ struct sockaddr_in serverAddr; // Server address structure
 char buffer[1024] = {0}; // Buffer for receiving data
 int fileSize = 0; // Variable to store file size
 struct timeval start, end; // Variables to measure time
-double elapsedTime; // Variable to store elapsed time
-double totalBandwidth = 0.0; // Variable to store total bandwidth
-int fileCount = 0; // Variable to count the number of files received
 double totalTime = 0; // the total time from when the files were sent until they arrived
+double totalBandwidth = 0.0; // Variable to store total bandwidth
+double elapsedTimeArray[50]; // Assuming a maximum of 50 runs, adjust as needed
+double bandwidthArray[50];   // Assuming a maximum of 50 runs, adjust as needed
 int createTheSocket(int port, char* algo)
 {
     // Create socket for the receiver
@@ -69,8 +69,20 @@ void receiveExitSignal(int senderSocket)
     if (exitSignal == -1)
     {
         printf("Received exit signal from server.\nClosing connection.\n");
+        printf("----------------------------------\n");
+        printf("           * Statistics *         \n");
+        for(int i = 0; i < runNumber; i++)
+        {
+            // Print time and bandwidth
+            printf("runNumber: %d \n", i+1);
+            printf("Received file in %.2f milliseconds.\n", elapsedTimeArray[i]); // Print elapsed time
+            printf("Bandwidth: %.2f bytes/millisecond\n", bandwidthArray[i]); // Print bandwidth
+        }
+        printf("----------------------------------\n");
         printf("Average time: %.2f milliseconds\n", totalTime/runNumber);
         printf("Average bandwidth: %.2f bytes/millisecond\n", totalBandwidth/runNumber);
+        printf("----------------------------------\n");
+        printf("Receiver end.\n");      
         // Handle the exit signal as needed
         close(senderSocket);
         exit(EXIT_SUCCESS);
@@ -98,20 +110,15 @@ void receiveTheFile(int runNumber)
     { // Check if sender closed connection
         return; // Exit loop
     }
-    clock_gettime(CLOCK_MONOTONIC, &end); // Get start time
-    // Calculate elapsed time
-    elapsedTime = (end.tv_sec - start.tv_sec) * 1000.0; // Convert seconds to milliseconds
-    elapsedTime += (end.tv_usec - start.tv_usec) / 1000.0; // Convert microseconds to milliseconds
-
+    clock_gettime(CLOCK_MONOTONIC, &end); // Get end time
+    // Calculate elapsed time// Calculate elapsed time in milliseconds
+    double elapsedTime = (end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_usec - start.tv_usec) / 1000.0;
+    double currentBandwidth = (received / elapsedTime);
     // Update total bandwidth
-    totalBandwidth += (fileSize / elapsedTime); // Calculate bandwidth in bytes/ms
-    // Print time and bandwidth
-    printf("runNumber: %d \n", runNumber);
-    printf("Received file in %.2f milliseconds.\n", elapsedTime); // Print elapsed time
+    totalBandwidth += currentBandwidth; // Calculate bandwidth in bytes/ms
     totalTime += elapsedTime;
-    printf("Bandwidth: %.2f bytes/millisecond\n", fileSize / elapsedTime); // Print bandwidth
-    // Increase file count
-    fileCount++; // Increment file count
+    elapsedTimeArray[runNumber - 1] = elapsedTime;
+    bandwidthArray[runNumber - 1] = currentBandwidth;
     // Wait for sender response
     printf("Waiting for sender response...\n"); // Wait message
     receiveExitSignal(senderSocket);
