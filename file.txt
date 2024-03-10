@@ -1,0 +1,2 @@
+./TCP_Sender -ip 127.0.0.1 -p 8080 -algo reno
+./TCP_Receiver -p 8080 -algo reno
